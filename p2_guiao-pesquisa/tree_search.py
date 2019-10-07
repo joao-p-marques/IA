@@ -57,11 +57,22 @@ class SearchProblem:
 
 # Nos de uma arvore de pesquisa
 class SearchNode:
-    def __init__(self,state,parent): 
+
+    def __init__(self,state,parent=None, depth=0): 
         self.state = state
         self.parent = parent
+        self.depth = depth
+
+    # verifica de forma recursiva se node esta no parent
+    def in_parent(self, state):
+        if self.parent is None:
+            return False
+        return self.state == state or self.parent.in_parent(state)
+
     def __str__(self):
-        return "no(" + str(self.state) + "," + str(self.parent) + ")"
+        # return "no(" + str(self.state) + "," + str(self.parent) + ")"
+        return f"no({self.state}, {self.parent}, {self.depth})"
+
     def __repr__(self):
         return str(self)
 
@@ -74,6 +85,10 @@ class SearchTree:
         root = SearchNode(problem.initial, None)
         self.open_nodes = [root]
         self.strategy = strategy
+        self.length = 0
+        self.terminal_nodes = 0
+        self.non_terminal_nodes = 1
+        self.ramification = 0
 
     # obter o caminho (sequencia de estados) da raiz ate um no
     def get_path(self,node):
@@ -81,19 +96,34 @@ class SearchTree:
             return [node.state]
         path = self.get_path(node.parent)
         path += [node.state]
-        return(path)
+        # path += [node]
+        return (path)
+
+    # obter o comprimento da soluçao
+    def get_path_length(self, node):
+        if node.parent is None:
+            return 0
+        return self.get_path_length(node.parent)+1
 
     # procurar a solucao
-    def search(self):
+    def search(self, depth_limit):
         while self.open_nodes != []:
             node = self.open_nodes.pop(0)
             if self.problem.goal_test(node.state):
                 return self.get_path(node)
             lnewnodes = []
-            for a in self.problem.domain.actions(node.state):
+            node_actions = self.problem.domain.actions(node.state)
+            for a in node_actions:
                 newstate = self.problem.domain.result(node.state,a)
-                lnewnodes += [SearchNode(newstate,node)]
+                if not node.in_parent(newstate) and node.depth < depth_limit:
+                    lnewnodes += [SearchNode(newstate,node, node.depth+1)]
             self.add_to_open(lnewnodes)
+            if lnewnodes == []:
+                self.terminal_nodes += 1
+                self.non_terminal_nodes -= 1
+            self.non_terminal_nodes += len(lnewnodes)
+            self.length += 1
+            self.ramification = self.length / self.non_terminal_nodes
         return None
 
     # juntar novos nos a lista de nos abertos de acordo com a estrategia
