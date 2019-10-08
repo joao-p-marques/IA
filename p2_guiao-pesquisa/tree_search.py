@@ -58,15 +58,16 @@ class SearchProblem:
 # Nos de uma arvore de pesquisa
 class SearchNode:
 
-    def __init__(self,state,parent=None, depth=0): 
+    def __init__(self,state,parent=None, depth=0, cum_cost=0): 
         self.state = state
         self.parent = parent
         self.depth = depth
+        self.cum_cost = cum_cost
 
     # verifica de forma recursiva se node esta no parent
     def in_parent(self, state):
         if self.parent is None:
-            return False
+            return self.state == state 
         return self.state == state or self.parent.in_parent(state)
 
     def __str__(self):
@@ -82,10 +83,11 @@ class SearchTree:
     # construtor
     def __init__(self,problem, strategy='breadth'): 
         self.problem = problem
-        root = SearchNode(problem.initial, None)
+        root = SearchNode(problem.initial, None) # depth and cum_cost initialized at 0
         self.open_nodes = [root]
         self.strategy = strategy
         self.length = 0
+        self.cost = 0
         self.terminal_nodes = 0
         self.non_terminal_nodes = 1
         self.ramification = 0
@@ -109,20 +111,25 @@ class SearchTree:
     def search(self, depth_limit):
         while self.open_nodes != []:
             node = self.open_nodes.pop(0)
+            self.cost+=node.cum_cost
+            self.length += 1
             if self.problem.goal_test(node.state):
-                return self.get_path(node)
+                return self.get_path(node), node.cum_cost
             lnewnodes = []
             node_actions = self.problem.domain.actions(node.state)
             for a in node_actions:
                 newstate = self.problem.domain.result(node.state,a)
-                if not node.in_parent(newstate) and node.depth < depth_limit:
-                    lnewnodes += [SearchNode(newstate,node, node.depth+1)]
+                if (not node.in_parent(newstate)) and node.depth < depth_limit:
+                    lnewnodes += [SearchNode(newstate,
+                                             node, 
+                                             node.depth+1, 
+                                             node.cum_cost + self.problem.domain.cost(node.state, a) 
+                                            )]
             self.add_to_open(lnewnodes)
             if lnewnodes == []:
                 self.terminal_nodes += 1
                 self.non_terminal_nodes -= 1
             self.non_terminal_nodes += len(lnewnodes)
-            self.length += 1
             self.ramification = self.length / self.non_terminal_nodes
         return None
 
@@ -133,5 +140,6 @@ class SearchTree:
         elif self.strategy == 'depth':
             self.open_nodes[:0] = lnewnodes
         elif self.strategy == 'uniform':
-            pass
+            self.open_nodes.extend(lnewnodes)
+            self.open_nodes = sorted(self.open_nodes, key=lambda node: node.cum_cost)
 

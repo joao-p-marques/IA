@@ -11,9 +11,11 @@
 from tree_search import *
 
 class Cidades(SearchDomain):
+
     def __init__(self,connections, coordinates):
         self.connections = connections
         self.coordinates = coordinates
+
     def actions(self,cidade):
         actlist = []
         for (C1,C2,D) in self.connections:
@@ -22,12 +24,20 @@ class Cidades(SearchDomain):
             elif (C2==cidade):
                actlist += [(C2,C1)]
         return actlist 
+
     def result(self,cidade,action):
         (C1,C2) = action
         if C1==cidade:
             return C2
+
     def cost(self, state, action):
-        pass
+        origin, dest = action
+        if state != origin:
+            return None
+        for C1, C2, D in self.connections:
+            if (C1, C2) == action or (C2, C1) == action:
+                return D # return distance
+
     def heuristic(self, state, goal_state):
         pass
 
@@ -97,8 +107,8 @@ cidades_portugal = Cidades(
 
 
 
-p = SearchProblem(cidades_portugal,'Braga','Faro')
-t = SearchTree(p,'depth')
+p = SearchProblem(cidades_portugal,'Aveiro','Faro')
+t = SearchTree(p,'uniform')
 
 # Atalho para obter caminho de c1 para c2 usando strategy:
 def search_path(c1,c2,strategy):
@@ -107,6 +117,8 @@ def search_path(c1,c2,strategy):
     my_tree.strategy = strategy
     return my_tree.search()
 
-print(t.search(depth_limit=8), t.length, t.terminal_nodes, t.non_terminal_nodes, t.ramification) 
+# print(t.search(depth_limit=8), t.length, t.terminal_nodes, t.non_terminal_nodes, t.ramification) 
+# print(cidades_portugal.cost('Porto', ('Porto', 'Agueda')))
+# print(cidades_portugal.cost('Agueda', ('Agueda', 'Porto')))
 
-
+print(t.search(depth_limit=12), t.cost) 
