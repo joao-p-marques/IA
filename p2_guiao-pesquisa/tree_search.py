@@ -58,11 +58,12 @@ class SearchProblem:
 # Nos de uma arvore de pesquisa
 class SearchNode:
 
-    def __init__(self,state,parent=None, depth=0, cum_cost=0): 
+    def __init__(self,state,parent=None, depth=0, cum_cost=0, heuristic=0): 
         self.state = state
         self.parent = parent
         self.depth = depth
         self.cum_cost = cum_cost
+        self.heuristic = heuristic
 
     # verifica de forma recursiva se node esta no parent
     def in_parent(self, state):
@@ -71,8 +72,8 @@ class SearchNode:
         return self.state == state or self.parent.in_parent(state)
 
     def __str__(self):
-        # return "no(" + str(self.state) + "," + str(self.parent) + ")"
-        return f"no({self.state}, {self.parent}, {self.depth})"
+        # return f"no({self.state}, {self.parent}, {self.depth})"
+        return f"node({self.state})"
 
     def __repr__(self):
         return str(self)
@@ -83,7 +84,7 @@ class SearchTree:
     # construtor
     def __init__(self,problem, strategy='breadth'): 
         self.problem = problem
-        root = SearchNode(problem.initial, None) # depth and cum_cost initialized at 0
+        root = SearchNode(problem.initial, None, 0, 0, self.problem.domain.heuristic(self.problem.initial, self.problem.goal)) # depth and cum_cost initialized at 0
         self.open_nodes = [root]
         self.strategy = strategy
         self.length = 0
@@ -91,6 +92,9 @@ class SearchTree:
         self.terminal_nodes = 0
         self.non_terminal_nodes = 1
         self.ramification = 0
+        self.most_cum_cost = []
+        self.depth_list = []
+        self.avg_depth = 0
 
     # obter o caminho (sequencia de estados) da raiz ate um no
     def get_path(self,node):
@@ -113,7 +117,15 @@ class SearchTree:
             node = self.open_nodes.pop(0)
             self.cost+=node.cum_cost
             self.length += 1
+            self.depth_list.append(node.depth)
+
+            if len(self.most_cum_cost) == 0 or node.cum_cost > self.most_cum_cost[0].cum_cost:
+                self.most_cum_cost = [node]
+            elif node.cum_cost == self.most_cum_cost[0].cum_cost and not node in self.most_cum_cost:
+                self.most_cum_cost.append(node)
+
             if self.problem.goal_test(node.state):
+                self.avg_depth = sum(self.depth_list) / len(self.depth_list)
                 return self.get_path(node), node.cum_cost
             lnewnodes = []
             node_actions = self.problem.domain.actions(node.state)
@@ -123,7 +135,8 @@ class SearchTree:
                     lnewnodes += [SearchNode(newstate,
                                              node, 
                                              node.depth+1, 
-                                             node.cum_cost + self.problem.domain.cost(node.state, a) 
+                                             node.cum_cost + self.problem.domain.cost(node.state, a),
+                                             self.problem.domain.heuristic(newstate, self.problem.goal)
                                             )]
             self.add_to_open(lnewnodes)
             if lnewnodes == []:
@@ -142,4 +155,8 @@ class SearchTree:
         elif self.strategy == 'uniform':
             self.open_nodes.extend(lnewnodes)
             self.open_nodes = sorted(self.open_nodes, key=lambda node: node.cum_cost)
+        elif self.strategy == 'greedy':
+            self.open_nodes = sorted(self.open_nodes + lnewnodes, key=lambda node: node.heuristic)
+        elif self.strategy == 'a*':
+            self.open_nodes = sorted(self.open_nodes + lnewnodes, key=lambda node: node.cum_cost + node.heuristic)
 

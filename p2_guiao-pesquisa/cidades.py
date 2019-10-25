@@ -7,6 +7,7 @@
 # (c) Luis Seabra Lopes, Introducao a Inteligencia Artificial, 2012/2013
 #
 
+import math
 
 from tree_search import *
 
@@ -38,8 +39,15 @@ class Cidades(SearchDomain):
             if (C1, C2) == action or (C2, C1) == action:
                 return D # return distance
 
+    # returns distance from point to goal
     def heuristic(self, state, goal_state):
-        pass
+        # calculate expected distance based on coordinates
+        origin_x, origin_y = self.coordinates[state]
+        dest_x, dest_y = self.coordinates[goal_state]
+
+        dist = math.hypot(dest_x - origin_x, dest_y - origin_x)
+
+        return dist
 
 cidades_portugal = Cidades( 
                     # Ligacoes por estrada
@@ -107,8 +115,10 @@ cidades_portugal = Cidades(
 
 
 
-p = SearchProblem(cidades_portugal,'Aveiro','Faro')
-t = SearchTree(p,'uniform')
+p = SearchProblem(cidades_portugal,'Viseu','Faro')
+t1 = SearchTree(p,'greedy')
+t2 = SearchTree(p,'uniform')
+t3 = SearchTree(p,'a*')
 
 # Atalho para obter caminho de c1 para c2 usando strategy:
 def search_path(c1,c2,strategy):
@@ -121,4 +131,9 @@ def search_path(c1,c2,strategy):
 # print(cidades_portugal.cost('Porto', ('Porto', 'Agueda')))
 # print(cidades_portugal.cost('Agueda', ('Agueda', 'Porto')))
 
-print(t.search(depth_limit=12), t.cost) 
+print("Greedy: ", end='')
+print(t1.search(depth_limit=12), 'Cost: ', t1.cost, 'Most Cost Nodes: ', t1.most_cum_cost, 'Avg Node Depth: ', t1.avg_depth) 
+print("Uniform: ", end='')
+print(t2.search(depth_limit=12), 'Cost: ', t2.cost, 'Most Cost Nodes: ', t2.most_cum_cost, 'Avg Node Depth: ', t2.avg_depth)
+print("A*: ", end='')
+print(t3.search(depth_limit=12), 'Cost: ', t3.cost, 'Most Cost Nodes: ', t3.most_cum_cost, 'Avg Node Depth: ', t3.avg_depth)
