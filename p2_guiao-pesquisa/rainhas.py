@@ -1,7 +1,6 @@
 
 from constraintsearch import *
 
-
 def queen_constraint(r1,c1,r2,c2):
     l1 = int(r1[1:])
     l2 = int(r2[1:])

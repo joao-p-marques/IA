@@ -6,7 +6,6 @@
 # (c) Luis Seabra Lopes, 2012-2016
 #
 
-
 class ConstraintSearch:
 
     # domains é um dicionário com o domínio de cada variável;
@@ -14,13 +13,14 @@ class ConstraintSearch:
     def __init__(self,domains,constraints):
         self.domains = domains
         self.constraints = constraints
-
+        self.calls = 0
 
     # domains é um dicionário com os domínios actuais
     # de cada variável
     # ( ver acetato "Pesquisa com propagacao de restricoes
     #   em problemas de atribuicao - algoritmo" )
     def search(self,domains=None):
+        self.calls += 1
         
         if domains==None:
             domains = self.domains
@@ -47,6 +47,10 @@ class ConstraintSearch:
                 for val in domains[var]:
                     newdomains = dict(domains)
                     newdomains[var] = [val]
+
+                    # propagate
+                    for neighbour in 
+
                     solution = self.search(newdomains)
                     if solution != None:
                         return solution
